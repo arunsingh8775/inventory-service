@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  inventory-service:
+    container_name: inventory-service
+    image: inventory-service:latest
+    restart: unless-stopped
+    ports:
+      - "8082:8082"   # inventory-service runs on 8082
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://10.0.0.117:5432/inventory_db"
+      SPRING_DATASOURCE_USERNAME: "postgres"
+      SPRING_DATASOURCE_PASSWORD: "postgres"
+      SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: "10.0.0.117:9094"
+      SERVER_PORT: "8082"
+      JAVA_TOOL_OPTIONS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=60 -XX:InitialRAMPercentage=25 -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
+
+networks:
+  default:
+    external: true
+    name: backend

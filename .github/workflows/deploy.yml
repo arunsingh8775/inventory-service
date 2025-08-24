@@ -1,0 +1,116 @@
+name: Build & Deploy Inventory Service
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+concurrency:
+  group: inventory-service-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure gradlew executable (fix CRLF if needed)
+        run: |
+          if command -v dos2unix >/dev/null 2>&1; then :; else sudo apt-get update && sudo apt-get install -y dos2unix; fi
+          dos2unix gradlew || true
+          chmod +x gradlew
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build JAR
+        run: ./gradlew --no-daemon clean bootJar -x test
+
+      - name: Locate built JAR
+        id: findjar
+        shell: bash
+        run: |
+          set -e
+          echo "Built artifacts under build/libs:"
+          ls -lah build/libs || true
+          # Prefer bootable jar, exclude *-plain.jar if both exist
+          JAR="$(ls -1 build/libs/*.jar 2>/dev/null | grep -v -- '-plain\.jar$' || ls -1 build/libs/*.jar 2>/dev/null | head -n1 || true)"
+          test -n "$JAR" || { echo "No JAR found under build/libs"; exit 1; }
+          echo "jar_path=$JAR" >> "$GITHUB_OUTPUT"
+          echo "jar_name=$(basename "$JAR")" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare target dir on VM
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: opc
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            set -e
+            mkdir -p /home/opc/inventory-service
+
+      - name: Copy files to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: opc
+          key: ${{ secrets.VM_SSH_KEY }}
+          source: "${{ steps.findjar.outputs.jar_path }},docker-compose.yml,Dockerfile"
+          target: "/home/opc/inventory-service"
+
+      - name: Deploy on VM
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: opc
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            cd /home/opc/inventory-service
+
+            echo "== Directory contents =="
+            ls -lah || true
+            echo "== Search for JARs =="
+            find . -type f -name '*.jar' -print || true
+
+            # Pick the bootable Spring Boot jar (exclude *-plain.jar) and normalize to app.jar
+            JAR="$(find . -type f -name '*.jar' ! -name '*-plain.jar' | head -n1 || true)"
+            if [ -z "${JAR:-}" ]; then
+              echo "No bootable JAR found (non-plain) in /home/opc/inventory-service"; exit 1
+            fi
+            cp -f "$JAR" app.jar
+
+            # Build runtime image from Dockerfile in current dir
+            TAG="inventory-service:$(date +%s)"
+            sudo docker build -t "$TAG" -f Dockerfile .
+
+            # If compose has an image: line for inventory-service, patch it to this tag
+            if grep -qE '^\s*image:\s*.*inventory-service' docker-compose.yml; then
+              sudo sed -i "s|^\(\s*image:\s*\).*|\1$TAG|g" docker-compose.yml
+            fi
+
+            # Redeploy service
+            sudo docker compose down || true
+            sudo docker compose up -d
+
+            echo "== Compose status =="
+            sudo docker compose ps
+            echo "== Last 100 logs (inventory-service) =="
+            sudo docker logs --tail=100 inventory-service || true

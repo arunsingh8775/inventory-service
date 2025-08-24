@@ -1,0 +1,51 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.5'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+description = 'Microservice for Order Tracking'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+/**
+ * IMPORTANT:
+ * Do NOT declare repositories here because settings.gradle
+ * is configured to prefer settings-level repositories.
+ * (No `repositories { }` block in this file.)
+ */
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.kafka:spring-kafka'
+    implementation 'org.postgresql:postgresql'
+
+    // Rely on Spring Boot’s managed versions—avoid pinning Hibernate/Jackson manually.
+    // implementation 'org.hibernate.orm:hibernate-core:6.2.6.Final'   // ❌ remove
+    // implementation 'com.fasterxml.jackson.core:jackson-databind'     // ❌ remove
+
+    // Your shared library via JitPack:
+    implementation 'com.github.arunsingh8775:order-tracking-common:v1.0.4'
+
+    // OpenAPI UI
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
