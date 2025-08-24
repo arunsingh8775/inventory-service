@@ -12,7 +12,10 @@ services:
       SPRING_DATASOURCE_USERNAME: "postgres"
       SPRING_DATASOURCE_PASSWORD: "postgres"
       SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: "10.0.0.117:9094"
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: "10.0.0.117:9094"   # same as order-service
+      SPRING_KAFKA_CONSUMER_GROUP_ID: "inventory-service" # stable group id
+      SPRING_KAFKA_PROPERTIES_PARTITION_ASSIGNMENT_STRATEGY: "org.apache.kafka.clients.consumer.CooperativeStickyAssignor"
+      SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: "PLAINTEXT"
       SERVER_PORT: "8082"
       JAVA_TOOL_OPTIONS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=60 -XX:InitialRAMPercentage=25 -XX:+UseG1GC -XX:MaxGCPauseMillis=200"
 
