@@ -1,8 +1,8 @@
 package com.example.inventoryservice.kafka;
 
-import com.example.inventoryservice.model.InventoryEvent;
-import com.example.inventoryservice.model.InventoryStatus;
 import com.example.inventoryservice.service.InventoryService;
+import com.example.ordertrackingcommon.model.InventoryEvent;
+import com.example.ordertrackingcommon.model.InventoryStatus;
 import com.example.ordertrackingcommon.model.OrderEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

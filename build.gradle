@@ -28,12 +28,8 @@ dependencies {
     implementation 'org.springframework.kafka:spring-kafka'
     implementation 'org.postgresql:postgresql'
 
-    // Rely on Spring Boot’s managed versions—avoid pinning Hibernate/Jackson manually.
-    // implementation 'org.hibernate.orm:hibernate-core:6.2.6.Final'   // ❌ remove
-    // implementation 'com.fasterxml.jackson.core:jackson-databind'     // ❌ remove
-
     // Your shared library via JitPack:
-    implementation 'com.github.arunsingh8775:order-tracking-common:v1.0.4'
+    implementation 'com.github.arunsingh8775:order-tracking-common:v1.0.5'
 
     // OpenAPI UI
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
