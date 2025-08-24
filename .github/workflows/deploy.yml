@@ -1,4 +1,4 @@
-name: Build & Deploy Inventory Service
+name: Build & Deploy Payment Service
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: inventory-service-${{ github.ref }}
+  group: payment-service-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -50,7 +50,6 @@ jobs:
           set -e
           echo "Built artifacts under build/libs:"
           ls -lah build/libs || true
-          # Prefer bootable jar, exclude *-plain.jar if both exist
           JAR="$(ls -1 build/libs/*.jar 2>/dev/null | grep -v -- '-plain\.jar$' || ls -1 build/libs/*.jar 2>/dev/null | head -n1 || true)"
           test -n "$JAR" || { echo "No JAR found under build/libs"; exit 1; }
           echo "jar_path=$JAR" >> "$GITHUB_OUTPUT"
@@ -64,7 +63,7 @@ jobs:
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
             set -e
-            mkdir -p /home/opc/inventory-service
+            mkdir -p /home/opc/payment-service
 
       - name: Copy files to VM
         uses: appleboy/scp-action@v0.1.7
@@ -73,7 +72,7 @@ jobs:
           username: opc
           key: ${{ secrets.VM_SSH_KEY }}
           source: "${{ steps.findjar.outputs.jar_path }},docker-compose.yml,Dockerfile"
-          target: "/home/opc/inventory-service"
+          target: "/home/opc/payment-service"
 
       - name: Deploy on VM
         uses: appleboy/ssh-action@v1.2.0
@@ -83,7 +82,7 @@ jobs:
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
             set -euo pipefail
-            cd /home/opc/inventory-service
+            cd /home/opc/payment-service
 
             echo "== Directory contents =="
             ls -lah || true
@@ -93,16 +92,16 @@ jobs:
             # Pick the bootable Spring Boot jar (exclude *-plain.jar) and normalize to app.jar
             JAR="$(find . -type f -name '*.jar' ! -name '*-plain.jar' | head -n1 || true)"
             if [ -z "${JAR:-}" ]; then
-              echo "No bootable JAR found (non-plain) in /home/opc/inventory-service"; exit 1
+              echo "No bootable JAR found (non-plain) in /home/opc/payment-service"; exit 1
             fi
             cp -f "$JAR" app.jar
 
             # Build runtime image from Dockerfile in current dir
-            TAG="inventory-service:$(date +%s)"
+            TAG="payment-service:$(date +%s)"
             sudo docker build -t "$TAG" -f Dockerfile .
 
-            # If compose has an image: line for inventory-service, patch it to this tag
-            if grep -qE '^\s*image:\s*.*inventory-service' docker-compose.yml; then
+            # If compose has an image: line for payment-service, patch it to this tag
+            if grep -qE '^\s*image:\s*.*payment-service' docker-compose.yml; then
               sudo sed -i "s|^\(\s*image:\s*\).*|\1$TAG|g" docker-compose.yml
             fi
 
@@ -112,5 +111,5 @@ jobs:
 
             echo "== Compose status =="
             sudo docker compose ps
-            echo "== Last 100 logs (inventory-service) =="
-            sudo docker logs --tail=100 inventory-service || true
+            echo "== Last 100 logs (payment-service) =="
+            sudo docker logs --tail=100 payment-service || true

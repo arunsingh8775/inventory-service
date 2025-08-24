@@ -1,6 +1,6 @@
 package com.example.inventoryservice.config;
 
-import com.example.inventoryservice.model.InventoryEvent; // adjust if you move events to a shared module
+import com.example.ordertrackingcommon.model.InventoryEvent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaTemplate;
