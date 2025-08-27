@@ -1,6 +1,6 @@
 package com.example.inventoryservice.repository;
 
-import com.example.inventoryservice.model.InventoryEntity;
+import com.example.ordertrackingcommon.model.InventoryEntity;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;

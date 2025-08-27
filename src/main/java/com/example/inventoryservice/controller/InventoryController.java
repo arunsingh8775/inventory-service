@@ -1,7 +1,7 @@
 package com.example.inventoryservice.controller;
 
-import com.example.inventoryservice.model.InventoryEntity;
 import com.example.inventoryservice.service.InventoryService;
+import com.example.ordertrackingcommon.model.InventoryEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,8 +14,6 @@ import io.swagger.v3.oas.annotations.parameters.RequestBody;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
 
 @Tag(name = "Inventory Management", description = "Check stock and upsert inventory records")
 @RestController
@@ -33,13 +31,17 @@ public class InventoryController {
             @ApiResponse(responseCode = "404", description = "Product not found in inventory", content = @Content)
     })
     @GetMapping(value = "/{productId}", produces = "application/json")
-    public ResponseEntity<Integer> getStock(
+    public ResponseEntity<?> getStock(
             @Parameter(description = "Unique product identifier", example = "P001")
             @PathVariable String productId) {
-        if (productId == null || productId.isBlank()) return ResponseEntity.badRequest().build();
-        Optional<InventoryEntity> inventoryOpt = inventoryService.getInventoryByProductId(productId.trim());
-        return inventoryOpt.map(inv -> ResponseEntity.ok(inv.getAvailableQty()))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+
+        if (productId == null || productId.isBlank()) {
+            return ResponseEntity.badRequest().body("Product ID cannot be empty");
+        }
+
+        return inventoryService.getInventoryByProductId(productId.trim())
+                .map(ResponseEntity::ok)   // returns 200 with entity
+                .orElseGet(() -> ResponseEntity.notFound().build()); // returns 404 if not found
     }
 
     @Operation(summary = "Create or update inventory", description = "Upserts an inventory record for a product.")

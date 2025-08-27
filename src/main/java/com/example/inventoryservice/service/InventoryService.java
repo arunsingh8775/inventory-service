@@ -1,7 +1,7 @@
 package com.example.inventoryservice.service;
 
-import com.example.inventoryservice.model.InventoryEntity;
 import com.example.inventoryservice.repository.InventoryRepository;
+import com.example.ordertrackingcommon.model.InventoryEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
